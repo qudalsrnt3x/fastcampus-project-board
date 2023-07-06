@@ -7,6 +7,7 @@ import com.fastcampus.projectboard.dto.CommentDto;
 import com.fastcampus.projectboard.dto.UserAccountDto;
 import com.fastcampus.projectboard.repository.ArticleRepository;
 import com.fastcampus.projectboard.repository.CommentRepository;
+import com.fastcampus.projectboard.repository.UserAccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ class CommentServiceTest {
 
     @Mock private ArticleRepository articleRepository;
     @Mock private CommentRepository commentRepository;
+    @Mock private UserAccountRepository userAccountRepository;
 
     @DisplayName("게시글 ID로 조회하면 해당하는 댓글 리스트 반환")
     @Test
@@ -55,6 +57,7 @@ class CommentServiceTest {
         // given
         CommentDto dto = createArticleCommentDto("댓글");
         given(articleRepository.getReferenceById(dto.articleId())).willReturn(createArticle());
+        given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(createUserAccount());
         given(commentRepository.save(any(Comment.class))).willReturn(null);
 
         // when
@@ -62,6 +65,7 @@ class CommentServiceTest {
 
         // then
         then(articleRepository).should().getReferenceById(dto.articleId());
+        then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
         then(commentRepository).should().save(any(Comment.class));
     }
 
@@ -77,6 +81,7 @@ class CommentServiceTest {
 
         // Then
         then(articleRepository).should().getReferenceById(dto.articleId());
+        then(userAccountRepository).shouldHaveNoInteractions();
         then(commentRepository).shouldHaveNoInteractions();
     }
 
