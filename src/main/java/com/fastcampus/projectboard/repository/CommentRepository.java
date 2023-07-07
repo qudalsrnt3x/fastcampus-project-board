@@ -20,6 +20,8 @@ public interface CommentRepository extends
 
     List<Comment> findByArticle_Id(Long articleId);
 
+    void deleteByIdAndUserAccount_UserId(Long commentId, String userId);
+
     @Override
     default void customize(QuerydslBindings bindings, QComment root) {
         bindings.excludeUnlistedProperties(true);
