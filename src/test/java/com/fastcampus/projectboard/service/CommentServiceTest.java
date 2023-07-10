@@ -2,6 +2,7 @@ package com.fastcampus.projectboard.service;
 
 import com.fastcampus.projectboard.domain.Article;
 import com.fastcampus.projectboard.domain.Comment;
+import com.fastcampus.projectboard.domain.Hashtag;
 import com.fastcampus.projectboard.domain.UserAccount;
 import com.fastcampus.projectboard.dto.CommentDto;
 import com.fastcampus.projectboard.dto.UserAccountDto;
@@ -18,8 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 
 @DisplayName("비즈니스 로직 - 댓글")
@@ -32,38 +35,37 @@ class CommentServiceTest {
     @Mock private CommentRepository commentRepository;
     @Mock private UserAccountRepository userAccountRepository;
 
-    @DisplayName("게시글 ID로 조회하면 해당하는 댓글 리스트 반환")
+    @DisplayName("게시글 ID로 조회하면, 해당하는 댓글 리스트를 반환한다.")
     @Test
-    void givenArticleId_whenSearchingComments_thenReturnArticleComments() {
-        // given
+    void givenArticleId_whenSearchingArticleComments_thenReturnsArticleComments() {
+        // Given
         Long articleId = 1L;
         Comment expected = createArticleComment("content");
         given(commentRepository.findByArticle_Id(articleId)).willReturn(List.of(expected));
 
+        // When
+        List<CommentDto> actual = sut.searchArticleComment(articleId);
 
-        // when
-        List<CommentDto> actual  = sut.searchArticleComment(articleId);
-
-        // then
+        // Then
         assertThat(actual)
                 .hasSize(1)
                 .first().hasFieldOrPropertyWithValue("content", expected.getContent());
         then(commentRepository).should().findByArticle_Id(articleId);
     }
 
-    @DisplayName("댓글 정보를 입력하면, 댓글 저장")
+    @DisplayName("댓글 정보를 입력하면, 댓글을 저장한다.")
     @Test
-    void givenCommentInfo_whenSavingComment_thenSavesComment() {
-        // given
+    void givenArticleCommentInfo_whenSavingArticleComment_thenSavesArticleComment() {
+        // Given
         CommentDto dto = createArticleCommentDto("댓글");
         given(articleRepository.getReferenceById(dto.articleId())).willReturn(createArticle());
         given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(createUserAccount());
         given(commentRepository.save(any(Comment.class))).willReturn(null);
 
-        // when
+        // When
         sut.saveComment(dto);
 
-        // then
+        // Then
         then(articleRepository).should().getReferenceById(dto.articleId());
         then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
         then(commentRepository).should().save(any(Comment.class));
@@ -85,20 +87,20 @@ class CommentServiceTest {
         then(commentRepository).shouldHaveNoInteractions();
     }
 
-    @DisplayName("댓글 수정 정보를 입력하면, 댓글 수정")
+    @DisplayName("댓글 정보를 입력하면, 댓글을 수정한다.")
     @Test
-    void givenModifiedInfo_whenUpdatingComment_thenUpdatesComment() {
-        // given
+    void givenArticleCommentInfo_whenUpdatingArticleComment_thenUpdatesArticleComment() {
+        // Given
         String oldContent = "content";
         String updatedContent = "댓글";
         Comment articleComment = createArticleComment(oldContent);
         CommentDto dto = createArticleCommentDto(updatedContent);
         given(commentRepository.getReferenceById(dto.id())).willReturn(articleComment);
 
-        // when
+        // When
         sut.updateComment(dto);
 
-        // then
+        // Then
         assertThat(articleComment.getContent())
                 .isNotEqualTo(oldContent)
                 .isEqualTo(updatedContent);
@@ -119,20 +121,21 @@ class CommentServiceTest {
         then(commentRepository).should().getReferenceById(dto.id());
     }
 
-    @DisplayName("댓글 ID를 입력하면, 댓글 삭제")
+    @DisplayName("댓글 ID를 입력하면, 댓글을 삭제한다.")
     @Test
-    void givenCommentId_whenDeletingComment_thenDeletesComment() {
-        // given
-        Long commentId = 1L;
+    void givenArticleCommentId_whenDeletingArticleComment_thenDeletesArticleComment() {
+        // Given
+        Long articleCommentId = 1L;
         String userId = "uno";
-        willDoNothing().given(commentRepository).deleteByIdAndUserAccount_UserId(commentId, userId);
+        willDoNothing().given(commentRepository).deleteByIdAndUserAccount_UserId(articleCommentId, userId);
 
         // When
-        sut.deleteComment(commentId, userId);
+        sut.deleteComment(articleCommentId, userId);
 
         // Then
-        then(commentRepository).should().deleteByIdAndUserAccount_UserId(commentId, userId);
+        then(commentRepository).should().deleteByIdAndUserAccount_UserId(articleCommentId, userId);
     }
+
 
     private CommentDto createArticleCommentDto(String content) {
         return CommentDto.of(
@@ -163,7 +166,7 @@ class CommentServiceTest {
 
     private Comment createArticleComment(String content) {
         return Comment.of(
-                Article.of(createUserAccount(), "title", "content", "hashtag"),
+                createArticle(),
                 createUserAccount(),
                 content
         );
@@ -180,11 +183,18 @@ class CommentServiceTest {
     }
 
     private Article createArticle() {
-        return Article.of(
+        Article article = Article.of(
                 createUserAccount(),
                 "title",
-                "content",
-                "#java"
+                "content"
         );
+        article.addHashtags(Set.of(createHashtag(article)));
+
+        return article;
     }
+
+    private Hashtag createHashtag(Article article) {
+        return Hashtag.of("java");
+    }
+
 }
