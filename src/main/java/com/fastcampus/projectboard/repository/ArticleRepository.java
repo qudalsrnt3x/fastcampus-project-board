@@ -24,16 +24,15 @@ public interface ArticleRepository extends
     Page<Article> findByContentContaining(String content, Pageable pageable);
     Page<Article> findByUserAccount_UserIdContaining(String articleId, Pageable pageable);
     Page<Article> findByUserAccount_NicknameContaining(String nickname, Pageable pageable);
-    Page<Article> findByHashtag(String hashtag, Pageable pageable);
 
     void deleteByIdAndUserAccount_UserId(Long articleId, String userId);
 
     @Override
     default void customize(QuerydslBindings bindings, QArticle root) {
         bindings.excludeUnlistedProperties(true);
-        bindings.including(root.title, root.hashtag, root.createdAt, root.createdBy, root.content);
+        bindings.including(root.title, root.content, root.hashtags, root.createdAt, root.createdBy);
         bindings.bind(root.title).first(StringExpression::containsIgnoreCase); // like '%${v}%'
-        bindings.bind(root.hashtag).first(StringExpression::containsIgnoreCase); // like '%${v}%'
+        bindings.bind(root.hashtags.any().hashtagName).first(StringExpression::containsIgnoreCase);
         // bindings.bind(root.title).first(StringExpression::likeIgnoreCase); // like '${v}'
         bindings.bind(root.createdAt).first(DateTimeExpression::eq);
         bindings.bind(root.createdBy).first(StringExpression::containsIgnoreCase);
