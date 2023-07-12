@@ -23,8 +23,8 @@ public class Comment extends AuditingFields {
     @ManyToOne(optional = false)
     private Article article; // 게시글 (ID)
     @Setter
-    @ManyToOne(optional = false)
     @JoinColumn(name = "userId")
+    @ManyToOne(optional = false)
     private UserAccount userAccount; // 유저 정보 (ID)
     @Setter @Column(nullable = false, length = 500) private String content; // 본문
 
